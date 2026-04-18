@@ -148,7 +148,7 @@ Write-Host "Staging prepared at $staging"
 if (Get-Command makensis -ErrorAction SilentlyContinue) {
     Push-Location $scriptDir
     Write-Host "Running makensis..."
-    & makensis -V4 (Join-Path $scriptDir "installer.nsi")
+    & makensis -V4 $nsisScript
     $rc = $LASTEXITCODE
     Pop-Location
     if ($rc -eq 0) {
