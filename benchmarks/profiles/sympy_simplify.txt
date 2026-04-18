@@ -1,0 +1,58 @@
+         22412030 function calls (20998541 primitive calls) in 15.062 seconds
+
+   Ordered by: cumulative time
+   List reduced from 1040 to 50 due to restriction <50>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+       20    0.000    0.000   15.078    0.754 c:\dev\MnL_MCP\scripts\run_profiling.py:84(call)
+       20    0.000    0.000   15.078    0.754 C:\dev\MnL_MCP\cython\mcp_sympy.pyx:4(explore)
+       20    0.001    0.000   15.065    0.753 {built-in method sympy_bindings.explore_fast}
+       20    0.002    0.000   13.587    0.679 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\simplify\simplify.py:435(simplify)
+      140    0.004    0.000    4.934    0.035 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\exprtools.py:984(gcd_terms)
+      140    0.048    0.000    4.917    0.035 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\exprtools.py:919(_gcd_terms)
+       60    0.002    0.000    4.584    0.076 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\polys\polytools.py:7324(cancel)
+387323/305000    0.772    0.000    4.394    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\sympify.py:124(sympify)
+      100    0.000    0.000    3.961    0.040 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\exprtools.py:1160(factor_terms)
+23100/100    0.081    0.000    3.960    0.040 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\exprtools.py:1221(do)
+    99720    0.460    0.000    3.638    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\exprtools.py:293(__init__)
+ 45780/60    0.854    0.000    3.523    0.059 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\simplify\powsimp.py:18(powsimp)
+45720/4680    0.131    0.000    3.510    0.001 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\simplify\powsimp.py:103(recurse)
+   175306    0.119    0.000    3.011    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\sympify.py:514(_sympify)
+   179007    0.190    0.000    2.969    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\numbers.py:1965(__eq__)
+   122308    0.106    0.000    2.719    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\numbers.py:1622(__eq__)
+826673/741801    0.787    0.000    2.455    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\cache.py:69(wrapper)
+  6320/80    0.046    0.000    2.344    0.029 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\simplify\simplify.py:355(signsimp)
+    10920    0.014    0.000    2.239    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\exprtools.py:871(quo)
+    10920    0.045    0.000    2.077    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\exprtools.py:859(mul)
+    99720    0.148    0.000    2.026    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\containers.py:337(<lambda>)
+    99950    0.566    0.000    1.885    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\containers.py:260(__new__)
+       40    0.000    0.000    1.775    0.044 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\polys\rationaltools.py:10(together)
+ 15320/40    0.021    0.000    1.775    0.044 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\polys\rationaltools.py:63(_together)
+76889/76843    0.094    0.000    1.522    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\decorators.py:236(_func)
+       20    0.000    0.000    1.515    0.076 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\expr.py:3810(cancel)
+    12585    0.064    0.000    1.484    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\basic.py:1542(replace)
+76889/76843    0.072    0.000    1.326    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\decorators.py:111(binary_op_wrapper)
+    24960    0.092    0.000    1.259    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\exprtools.py:457(mul)
+188028/159303    0.389    0.000    1.245    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\sorting.py:202(ordered)
+       72    0.004    0.000    1.151    0.016 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\parsing\sympy_parser.py:910(parse_expr)
+6530/6362    0.075    0.000    1.138    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\operations.py:62(__new__)
+146457/12585    0.184    0.000    1.055    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\basic.py:1766(walk)
+    43640    0.069    0.000    1.045    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\exprtools.py:814(__init__)
+       72    0.000    0.000    0.946    0.013 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\parsing\sympy_parser.py:899(eval_expr)
+       72    0.022    0.000    0.946    0.013 {built-in method builtins.eval}
+    10920    0.052    0.000    0.941    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\exprtools.py:490(normal)
+115801/80310    0.119    0.000    0.925    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\decorators.py:69(__sympifyit_wrapper)
+3769157/3724238    0.802    0.000    0.867    0.000 {built-in method builtins.isinstance}
+     1540    0.002    0.000    0.839    0.001 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\expr.py:231(__add__)
+     1589    0.140    0.000    0.816    0.001 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\add.py:197(flatten)
+     6160    0.027    0.000    0.801    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\simplify\cse_opts.py:10(sub_pre)
+   146457    0.083    0.000    0.730    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\basic.py:1787(rec_replace)
+    10780    0.024    0.000    0.702    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\exprtools.py:882(gcd)
+   201600    0.073    0.000    0.655    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\traversal.py:160(__next__)
+86655/86503    0.133    0.000    0.619    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\numbers.py:1927(__mul__)
+244117/241887    0.329    0.000    0.598    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\basic.py:497(__eq__)
+    12320    0.106    0.000    0.587    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\basic.py:601(atoms)
+   201600    0.089    0.000    0.583    0.000 {built-in method builtins.next}
+    21560    0.035    0.000    0.562    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\sympy\core\exprtools.py:722(gcd)
+
+

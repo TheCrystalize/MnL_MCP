@@ -1,0 +1,58 @@
+         101646 function calls (100804 primitive calls) in 0.126 seconds
+
+   Ordered by: cumulative time
+   List reduced from 235 to 50 due to restriction <50>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+       20    0.000    0.000    0.126    0.006 c:\dev\MnL_MCP\scripts\run_profiling.py:104(call)
+       20    0.000    0.000    0.126    0.006 C:\dev\MnL_MCP\cython\mcp_z3.pyx:4(solve_smt)
+       20    0.003    0.000    0.118    0.006 {built-in method z3_bindings.solve_smt_fast}
+      400    0.001    0.000    0.039    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:7297(add)
+      400    0.001    0.000    0.035    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:7278(assert_exprs)
+       20    0.000    0.000    0.034    0.002 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:7364(check)
+       20    0.033    0.002    0.033    0.002 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3core.py:4348(Z3_solver_check_assumptions)
+      400    0.001    0.000    0.016    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:1621(cast)
+      420    0.001    0.000    0.013    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:6117(__getitem__)
+     1620    0.003    0.000    0.012    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:372(__init__)
+     1620    0.003    0.000    0.010    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:377(__del__)
+     2440    0.002    0.000    0.010    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:593(as_ast)
+      400    0.009    0.000    0.010    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3core.py:4221(Z3_solver_assert)
+     9682    0.008    0.000    0.010    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3core.py:1588(Check)
+      400    0.000    0.000    0.009    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:570(_to_ast_ref)
+     2440    0.004    0.000    0.007    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3core.py:2900(Z3_sort_to_ast)
+       20    0.000    0.000    0.006    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:9648(parse_smt2_string)
+      400    0.001    0.000    0.006    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:1221(_to_expr_ref)
+       20    0.006    0.000    0.006    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3core.py:3660(Z3_parse_smtlib2_string)
+      400    0.001    0.000    0.006    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:431(eq)
+      420    0.001    0.000    0.006    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:1824(BoolSort)
+       20    0.001    0.000    0.006    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:6868(decls)
+      400    0.001    0.000    0.006    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:1657(sort)
+       20    0.000    0.000    0.005    0.000 C:\Python314\Lib\pathlib\__init__.py:937(resolve)
+       20    0.000    0.000    0.005    0.000 <frozen ntpath>:705(realpath)
+     1620    0.003    0.000    0.005    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3core.py:1658(Z3_inc_ref)
+       20    0.000    0.000    0.004    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:7165(__init__)
+     2120    0.000    0.000    0.004    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:287(_get_ctx)
+       40    0.004    0.000    0.004    0.000 {built-in method nt._getfinalpathname}
+       20    0.000    0.000    0.004    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:7178(__del__)
+       20    0.004    0.000    0.004    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3core.py:4197(Z3_solver_dec_ref)
+       40    0.000    0.000    0.004    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:266(main_ctx)
+        1    0.000    0.000    0.003    0.003 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:202(__init__)
+      820    0.001    0.000    0.003    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:783(as_ast)
+        1    0.003    0.003    0.003    0.003 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3core.py:1651(Z3_mk_context_rc)
+      420    0.001    0.000    0.003    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:152(_get_args)
+       20    0.000    0.000    0.003    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:7189(set)
+6581/5781    0.001    0.000    0.003    0.000 {built-in method builtins.isinstance}
+    21084    0.002    0.000    0.002    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3types.py:24(from_param)
+     1620    0.002    0.000    0.002    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3core.py:1662(Z3_dec_ref)
+      820    0.001    0.000    0.002    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3core.py:3025(Z3_func_decl_to_ast)
+       20    0.002    0.000    0.002    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3core.py:4189(Z3_solver_set_params)
+      800    0.001    0.000    0.002    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3core.py:3155(Z3_get_sort)
+      800    0.001    0.000    0.002    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3core.py:3170(Z3_get_ast_kind)
+     4080    0.002    0.000    0.002    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:427(ctx_ref)
+      400    0.000    0.000    0.002    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:522(_ast_kind)
+      420    0.000    0.000    0.002    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:6104(__len__)
+      400    0.000    0.000    0.001    0.000 C:\Python314\Lib\typing.py:1278(__instancecheck__)
+       20    0.000    0.000    0.001    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3.py:7393(model)
+      400    0.001    0.000    0.001    0.000 C:\Users\venim\AppData\Roaming\Python\Python314\site-packages\z3\z3core.py:4491(Z3_ast_vector_get)
+
+

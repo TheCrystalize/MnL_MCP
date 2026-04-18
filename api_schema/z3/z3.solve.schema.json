@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "z3.solve.params",
+  "description": "Parameters for the z3.solve MCP method. Run an SMT-LIB v2 query using Z3 (via z3-solver).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "smt2"
+  ],
+  "properties": {
+    "smt2": {
+      "type": "string",
+      "description": "SMT-LIB v2 input string to be checked."
+    },
+    "timeout_ms": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Timeout in milliseconds for this operation (optional; server enforces global caps)."
+    },
+    "options": {
+      "type": "object",
+      "description": "Backend-specific options (optional).",
+      "additionalProperties": true,
+      "properties": {
+        "produce_model": { "type": "boolean", "description": "Request model production if the solver supports it." },
+        "logic": { "type": "string", "description": "Optional logic string for the solver (e.g., QF_LIA)." },
+        "random_seed": { "type": "integer", "description": "Optional random seed for solver heuristics." }
+      }
+    }
+  }
+}

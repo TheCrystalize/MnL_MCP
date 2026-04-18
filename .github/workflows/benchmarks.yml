@@ -1,0 +1,40 @@
+name: Benchmarks and Profiling
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  benchmarks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-benchmark pytest-xdist
+          # Optional heavy deps; CI will continue if they fail to install
+          pip install sympy z3-solver || true
+
+      - name: Run pytest benchmarks
+        run: |
+          pytest -q tests/benchmarks --maxfail=1 || true
+
+      - name: Run profiling script
+        run: |
+          python scripts/run_profiling.py --iterations 10 --outdir benchmarks/profiles || true
+
+      - name: Upload profiling artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: profiles
+          path: benchmarks/profiles

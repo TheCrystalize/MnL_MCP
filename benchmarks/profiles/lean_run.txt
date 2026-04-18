@@ -1,0 +1,58 @@
+         3143 function calls (3103 primitive calls) in 0.500 seconds
+
+   Ordered by: cumulative time
+   List reduced from 118 to 50 due to restriction <50>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+       20    0.000    0.000    0.500    0.025 c:\dev\MnL_MCP\scripts\run_profiling.py:116(call)
+       20    0.000    0.000    0.500    0.025 C:\dev\MnL_MCP\cython\mcp_lean.py:7(run_lean)
+       20    0.492    0.025    0.492    0.025 {built-in method lean_bindings.run_lean_persistent}
+       20    0.000    0.000    0.005    0.000 C:\Python314\Lib\pathlib\__init__.py:937(resolve)
+       20    0.000    0.000    0.005    0.000 <frozen ntpath>:705(realpath)
+       40    0.004    0.000    0.004    0.000 {built-in method nt._getfinalpathname}
+       20    0.000    0.000    0.001    0.000 C:\Python314\Lib\importlib\__init__.py:71(import_module)
+       20    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap>:1386(_gcd_import)
+       20    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap>:1360(_find_and_load)
+        1    0.000    0.000    0.001    0.001 <frozen importlib._bootstrap>:1308(_find_and_load_unlocked)
+        1    0.000    0.000    0.001    0.001 <frozen importlib._bootstrap>:914(_load_unlocked)
+        1    0.000    0.000    0.001    0.001 <frozen importlib._bootstrap>:809(module_from_spec)
+        3    0.000    0.000    0.001    0.000 <frozen importlib._bootstrap>:483(_call_with_frames_removed)
+        1    0.000    0.000    0.001    0.001 <frozen importlib._bootstrap_external>:1054(create_module)
+        1    0.001    0.001    0.001    0.001 {built-in method _imp.create_dynamic}
+       20    0.000    0.000    0.001    0.000 C:\Python314\Lib\pathlib\__init__.py:668(exists)
+       20    0.000    0.000    0.001    0.000 {built-in method nt._path_exists}
+       40    0.000    0.000    0.001    0.000 C:\Python314\Lib\pathlib\__init__.py:190(__fspath__)
+       60    0.000    0.000    0.001    0.000 C:\Python314\Lib\pathlib\__init__.py:251(__str__)
+       60    0.000    0.000    0.001    0.000 C:\Python314\Lib\pathlib\__init__.py:346(drive)
+      100    0.000    0.000    0.001    0.000 C:\Python314\Lib\pathlib\__init__.py:157(with_segments)
+       20    0.000    0.000    0.000    0.000 {built-in method nt._path_normpath}
+      120    0.000    0.000    0.000    0.000 C:\Python314\Lib\pathlib\__init__.py:135(__init__)
+       60    0.000    0.000    0.000    0.000 C:\Python314\Lib\pathlib\__init__.py:172(__truediv__)
+       60    0.000    0.000    0.000    0.000 C:\Python314\Lib\pathlib\__init__.py:281(_parse_path)
+       20    0.000    0.000    0.000    0.000 C:\Python314\Lib\pathlib\__init__.py:396(parents)
+       20    0.000    0.000    0.000    0.000 C:\Python314\Lib\pathlib\__init__.py:63(__getitem__)
+       20    0.000    0.000    0.000    0.000 C:\Python314\Lib\pathlib\__init__.py:54(__init__)
+       60    0.000    0.000    0.000    0.000 C:\Python314\Lib\pathlib\__init__.py:330(_raw_path)
+       20    0.000    0.000    0.000    0.000 C:\Python314\Lib\pathlib\__init__.py:269(_from_parsed_parts)
+      120    0.000    0.000    0.000    0.000 C:\Python314\Lib\pathlib\__init__.py:637(__new__)
+       20    0.000    0.000    0.000    0.000 <frozen ntpath>:99(join)
+        1    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:1243(_find_spec)
+       20    0.000    0.000    0.000    0.000 C:\Python314\Lib\pathlib\__init__.py:276(_from_parsed_string)
+        1    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1287(find_spec)
+        1    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1258(_get_spec)
+      441    0.000    0.000    0.000    0.000 {built-in method builtins.isinstance}
+       20    0.000    0.000    0.000    0.000 <frozen ntpath>:50(normcase)
+        1    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap_external>:1360(find_spec)
+       60    0.000    0.000    0.000    0.000 C:\Python314\Lib\pathlib\__init__.py:261(_format_parsed_parts)
+      140    0.000    0.000    0.000    0.000 {built-in method nt._path_splitroot_ex}
+  166/126    0.000    0.000    0.000    0.000 {built-in method builtins.len}
+      121    0.000    0.000    0.000    0.000 {built-in method __new__ of type object at 0x00007FFA70556D90}
+       20    0.000    0.000    0.000    0.000 <frozen ntpath>:80(isabs)
+      101    0.000    0.000    0.000    0.000 {method 'replace' of 'str' objects}
+       60    0.000    0.000    0.000    0.000 {method 'split' of 'str' objects}
+        1    0.000    0.000    0.000    0.000 <frozen importlib._bootstrap>:419(__enter__)
+      143    0.000    0.000    0.000    0.000 {method 'append' of 'list' objects}
+      181    0.000    0.000    0.000    0.000 {built-in method nt.fspath}
+      103    0.000    0.000    0.000    0.000 {method 'startswith' of 'str' objects}
+
+

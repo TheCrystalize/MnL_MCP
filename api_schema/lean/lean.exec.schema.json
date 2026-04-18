@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "lean.exec.params",
+  "description": "Parameters for the lean.exec MCP method. Run Lean 4 source with a specified mode and timeout.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source",
+    "mode"
+  ],
+  "properties": {
+    "source": {
+      "type": "string",
+      "description": "Lean 4 source code to run or check."
+    },
+    "mode": {
+      "type": "string",
+      "description": "Execution mode.",
+      "enum": [
+        "check",
+        "eval",
+        "verify",
+        "build"
+      ]
+    },
+    "timeout_ms": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Timeout in milliseconds for this operation (optional; server enforces global caps)."
+    },
+    "options": {
+      "type": "object",
+      "description": "Backend-specific options (optional).",
+      "additionalProperties": true
+    }
+  }
+}

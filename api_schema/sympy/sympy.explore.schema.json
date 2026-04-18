@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "sympy.explore.params",
+  "description": "Parameters for the sympy.explore MCP method. Perform symbolic operations using SymPy.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "expr",
+    "goals"
+  ],
+  "properties": {
+    "expr": {
+      "type": "string",
+      "description": "Expression to analyze using SymPy (string form)."
+    },
+    "goals": {
+      "type": "array",
+      "description": "List of symbolic goals to perform (order may matter).",
+      "items": {
+        "type": "string",
+        "enum": [
+          "simplify",
+          "factor",
+          "solve",
+          "expand",
+          "differentiate",
+          "integrate",
+          "subs"
+        ]
+      }
+    },
+    "variables": {
+      "type": "array",
+      "description": "Optional list of variable names relevant to `solve` or other goals.",
+      "items": { "type": "string" }
+    },
+    "timeout_ms": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Timeout in milliseconds for this operation (optional; server enforces global caps)."
+    },
+    "options": {
+      "type": "object",
+      "description": "Backend-specific options (optional).",
+      "additionalProperties": true
+    }
+  }
+}

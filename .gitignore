@@ -1,0 +1,83 @@
+# MnL_MCP - gitignore
+
+# OS
+Thumbs.db
+ehthumbs.db
+.DS_Store
+desktop.ini
+
+# Visual Studio / .NET
+.vs/
+.vscode/
+**/bin/
+**/obj/
+*.user
+*.suo
+*.userosscache
+*.pdb
+*.ilk
+*.ipdb
+
+# CMake / build artifacts
+/build/
+/build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+install_manifest.txt
+compile_commands.json
+
+# Native / compiled artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+*.lib
+*.a
+*.o
+*.obj
+*.pyd
+
+# Python
+.venv/
+env/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+dist/
+build/
+*.egg-info/
+pip-wheel-metadata/
+
+# NSIS / installer staging and output
+installer/staging/
+installer/*.exe
+installer/*.zip
+installer/launcher_publish/
+
+# Dotnet / NuGet
+*.nupkg
+packages/
+.nuget/
+
+# Logs / temp
+*.log
+tmp/
+temp/
+*.tmp
+
+# IDEs
+.idea/
+*.sublime-*
+.vscode/
+
+# Secrets / signing keys
+*.pfx
+*.snk
+*.key
+*.crt
+
+# Other
+.vagrant/

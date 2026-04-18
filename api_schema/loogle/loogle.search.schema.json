@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "loogle.search.params",
+  "description": "Parameters for the loogle.search MCP method. Query web resources (optional adapter).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "query"
+  ],
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Search query string."
+    },
+    "max_results": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 5,
+      "description": "Max number of results to return."
+    },
+    "timeout_ms": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Timeout in milliseconds for the search request."
+    },
+    "api_key": {
+      "type": "string",
+      "description": "Optional API key for external search adapters."
+    },
+    "options": {
+      "type": "object",
+      "description": "Adapter-specific options.",
+      "additionalProperties": true
+    }
+  }
+}
