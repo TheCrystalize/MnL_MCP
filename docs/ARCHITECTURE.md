@@ -1,7 +1,7 @@
 # Architecture
 
 Overview
-- C++ MCP stdio core: JSON-RPC 2.0 over stdio with Content-Length framing; handles parsing, request routing, timeouts, cancellation, and structured logging.
+- C++ MCP stdio core: JSON-RPC 2.0 over stdio with NDJSON framing (one JSON object per line); handles parsing, request routing, timeouts, cancellation, and structured logging.
 - Dispatcher / Worker pool: routes method calls to handler threads; enforces resource limits and per-job timeouts.
 - CPython embed: C++ embeds CPython; calls into Cython-built extension modules for z3 and sympy.
 - Lean runner: creates temp .lean files, invokes local `lean` process, captures stdout/stderr and exit codes.
@@ -19,7 +19,7 @@ sequenceDiagram
     participant Z as Z3/SymPy
     participant L as Lean
 
-    U->>C: JSON-RPC request (Content-Length framed)
+    U->>C: JSON-RPC request (NDJSON framed)
     C->>D: parse & validate (JSON Schema)
     D->>P: call handler (z3/sympy/loogle)
     P->>Z: execute (z3-solver / sympy)
@@ -53,5 +53,5 @@ Extensibility
 - API schemas live in docs/API_SCHEMA/ and are the source of truth for TS client generation.
 
 Notes
-- Keep the core protocol stable (JSON-RPC + Content-Length); provide language-specific adapters rather than changing the wire format.
+- Keep the core protocol stable (JSON-RPC + NDJSON); provide language-specific adapters rather than changing the wire format.
 - Prefer pip-installed `z3-solver` and `sympy` for Python handlers.

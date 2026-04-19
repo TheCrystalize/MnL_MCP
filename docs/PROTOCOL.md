@@ -1,34 +1,30 @@
-# Protocol — JSON-RPC 2.0 over stdio (Content-Length framing)
+# Protocol — JSON-RPC 2.0 over stdio (NDJSON framing)
 
 Purpose
-- Wire format: JSON-RPC 2.0 transported over stdio using Content-Length framing (LSP-style).
+- Wire format: JSON-RPC 2.0 transported over stdio using newline-delimited JSON (NDJSON), as required by the Model Context Protocol.
 - Goals: simple, debuggable, language-agnostic, easily consumable by TypeScript clients generated from JSON Schema.
 
 Framing
-- Each message is prefixed with a header block that MUST include `Content-Length: <N>` followed by an empty line, then exactly N bytes of UTF-8 JSON.
+- Each message is exactly one JSON object on its own line, terminated by `\n`. There is no header block — the message body is the line itself.
+- Clients MUST emit one request per line and MUST NOT embed raw newlines inside the JSON object.
 
 Example (raw stdio message):
 
-```bash
-Content-Length: 123\r\n
-\r\n
+```
 {"jsonrpc":"2.0","id":1,"method":"z3.solve","params":{"smt2":"(declare-const x Int) (assert (> x 0)) (check-sat)","timeout_ms":5000}}
 ```
 
 Reading loop (pseudo-C++):
 
 ```cpp
-// read headers until an empty line, parse Content-Length, then read body
+// NDJSON: one JSON object per line.
 std::string line;
-int content_length = 0;
-while (std::getline(std::cin, line) && !line.empty()) {
-    if (line.rfind("Content-Length:", 0) == 0) {
-        content_length = std::stoi(line.substr(15));
-    }
+while (std::getline(std::cin, line)) {
+    if (!line.empty() && line.back() == '\r') line.pop_back();
+    if (line.empty()) continue;
+    auto req = nlohmann::json::parse(line);
+    // ... handle req ...
 }
-std::string body(content_length, '\0');
-std::cin.read(&body[0], content_length);
-auto req = nlohmann::json::parse(body);
 ```
 
 Message shape

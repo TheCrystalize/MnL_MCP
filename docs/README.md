@@ -51,7 +51,7 @@ cmake --build . --config Release
 Notes
 - Lean 4 must be installed locally and available on PATH for the Lean runner to work.
 - z3 is recommended via the pip package `z3-solver`.
-- Wire format: JSON-RPC 2.0 with Content-Length framing (LSP-style). TypeScript clients are generated from JSON Schema (in API_SCHEMA/).
+- Wire format: JSON-RPC 2.0 with NDJSON framing (one JSON object per line, per the MCP spec). TypeScript clients are generated from JSON Schema (in API_SCHEMA/).
 
 Contributing
 - See CONTRIBUTING.md for code style, pre-commit, and PR process.

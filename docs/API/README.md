@@ -1,6 +1,6 @@
 # API — JSON-RPC methods
 
-All methods use JSON-RPC 2.0 over stdio (Content-Length framing). Schemas for each method live in docs/API_SCHEMA/*.schema.json and are the authoritative contract used to generate TypeScript types.
+All methods use JSON-RPC 2.0 over stdio (NDJSON framing — one JSON object per line, per the MCP spec). Schemas for each method live in docs/API_SCHEMA/*.schema.json and are the authoritative contract used to generate TypeScript types.
 
 Summary of methods
 - lean.exec — run Lean 4 source (modes: check, eval). Returns diagnostics, stdout/stderr, exit code.

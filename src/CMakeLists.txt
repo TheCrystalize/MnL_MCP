@@ -1,10 +1,15 @@
 cmake_minimum_required(VERSION 3.15)
 project(mcp_stdio_src LANGUAGES CXX)
 
-add_executable(mcp_stdio_server
+set(MCP_SERVER_SOURCES
   mcp_stdio_server.cpp
   pyembed.cpp
 )
+if(WIN32)
+  list(APPEND MCP_SERVER_SOURCES server.rc)
+endif()
+
+add_executable(mcp_stdio_server ${MCP_SERVER_SOURCES})
 
 target_link_libraries(mcp_stdio_server PRIVATE nlohmann_json::nlohmann_json ${Python_LIBRARIES})
 target_include_directories(mcp_stdio_server PRIVATE ${Python_INCLUDE_DIRS})

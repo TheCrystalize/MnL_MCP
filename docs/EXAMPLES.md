@@ -29,31 +29,22 @@ z3_res = solve_smt(smt2, timeout_ms=2000)
 print(sym_res, z3_res)
 ```
 
-3) JSON-RPC over stdio — example integration test harness (sends a framed request)
+3) JSON-RPC over stdio — example integration test harness (NDJSON framing)
 
 ```python
 # python
-import subprocess, json, sys
+import subprocess, json
 
 def send_request(proc, req):
-    body = json.dumps(req)
-    hdr = f"Content-Length: {len(body)}\r\n\r\n"
-    proc.stdin.write(hdr.encode() + body.encode())
+    # NDJSON: one JSON object per line, terminated by '\n'.
+    line = json.dumps(req) + "\n"
+    proc.stdin.write(line.encode())
     proc.stdin.flush()
 
 def read_response(proc):
-    # simple helper: read headers, parse Content-Length, then read body
-    hdr = b""
-    while True:
-        line = proc.stdout.readline()
-        if not line or line == b"\r\n":
-            break
-        hdr += line
-    # parse Content-Length
-    # (robust harness code would be longer)
-    content_length = int(hdr.decode().split("Content-Length: ")[1].strip())
-    body = proc.stdout.read(content_length)
-    return json.loads(body.decode())
+    # One response line per message.
+    raw = proc.stdout.readline()
+    return json.loads(raw.decode())
 
 proc = subprocess.Popen(["./build/mcp_stdio_server"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 req = {

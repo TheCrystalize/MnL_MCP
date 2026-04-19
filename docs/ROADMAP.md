@@ -6,7 +6,7 @@ Vision
 Milestones
 
 MVP (0–4 weeks)
-- JSON-RPC 2.0 stdio core (Content-Length framing).
+- JSON-RPC 2.0 stdio core (NDJSON framing, per MCP spec).
 - C++ core (dispatch + workers) with nlohmann::json and structured logging.
 - Cython Python modules for z3 (z3-solver) and sympy.
 - Lean runner invoking local `lean` on temp files with timeout handling.

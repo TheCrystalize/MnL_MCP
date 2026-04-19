@@ -1,0 +1,3 @@
+// Windows resource: embeds the MnL icon into mcp_stdio_server.exe so Explorer,
+// taskbar, and the console window title bar display the MnL logo.
+IDI_ICON1 ICON "MnLLogo.ico"

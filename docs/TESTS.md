@@ -30,17 +30,17 @@ ctest --output-on-failure
 ```
 
 Integration tests
-- Integration tests spawn the built stdio server binary and communicate over stdin/stdout using Content-Length framing.
+- Integration tests spawn the built stdio server binary and communicate over stdin/stdout using NDJSON framing (one JSON object per line).
 - Example small Python harness:
 
 ```python
 # tests/integration/test_z3_integration.py
-import subprocess, json, sys, time
+import subprocess, json
 proc = subprocess.Popen(["./build/mcp_stdio_server"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 req = json.dumps({"jsonrpc":"2.0","id":1,"method":"z3.solve","params":{"smt2":"(declare-const x Int) (assert (> x 0)) (check-sat)","timeout_ms":2000}})
-msg = f"Content-Length: {len(req)}\r\n\r\n{req}"
-proc.stdin.write(msg.encode()); proc.stdin.flush()
-# read response header+body (test harness has helper functions)
+proc.stdin.write((req + "\n").encode()); proc.stdin.flush()
+# one response per line
+resp = json.loads(proc.stdout.readline().decode())
 ```
 
 E2E tests
