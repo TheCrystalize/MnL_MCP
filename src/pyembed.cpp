@@ -42,6 +42,43 @@ void finalize_python() {
 
 static json pyobj_to_json(PyObject* obj);
 
+json call_python_loogle_search(const std::string& query, int max_results = 5, int timeout_ms = 0) {
+    json result;
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    PyObject* module = PyImport_ImportModule("mcp_loogle");
+    if (!module) {
+        PyErr_Print();
+        result["error"] = "failed to import mcp_loogle";
+        PyGILState_Release(gstate);
+        return result;
+    }
+    PyObject* func = PyObject_GetAttrString(module, "search");
+    if (!func || !PyCallable_Check(func)) {
+        PyErr_Print();
+        result["error"] = "search not callable";
+        Py_XDECREF(module);
+        PyGILState_Release(gstate);
+        return result;
+    }
+    PyObject* args = PyTuple_Pack(3,
+        PyUnicode_FromString(query.c_str()),
+        PyLong_FromLong(max_results),
+        PyLong_FromLong(timeout_ms));
+    PyObject* pyres = PyObject_CallObject(func, args);
+    Py_XDECREF(args);
+    if (!pyres) {
+        PyErr_Print();
+        result["error"] = "call failed";
+    } else {
+        result = pyobj_to_json(pyres);
+        Py_XDECREF(pyres);
+    }
+    Py_XDECREF(func);
+    Py_XDECREF(module);
+    PyGILState_Release(gstate);
+    return result;
+}
+
 json call_python_solve(const std::string& smt2, int timeout_ms = 0, const std::string& session_id = "") {
     json result;
     PyGILState_STATE gstate = PyGILState_Ensure();

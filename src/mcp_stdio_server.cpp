@@ -14,6 +14,7 @@ extern void finalize_python();
 extern json call_python_solve(const std::string& smt2, int timeout_ms, const std::string& session_id);
 extern json call_python_explore(const std::string& expr, const std::vector<std::string>& goals, int timeout_ms, const std::string& output_syntax);
 extern json call_python_run_lean(const std::string& source, const std::string& mode, int timeout_ms);
+extern json call_python_loogle_search(const std::string& query, int max_results, int timeout_ms);
 
 static std::string trim(const std::string& s) {
     size_t b = s.find_first_not_of(" \t\r\n");
@@ -116,7 +117,7 @@ int main() {
                         },
                         {
                             {"name", "lean.exec"},
-                            {"description", "Execute or check Lean 4 source code"},
+                            {"description", "Execute or check Lean 4 source code. IMPORTANT: before writing any Mathlib lemma or tactic name, call loogle_search first to confirm the exact name exists in Mathlib4 — do not guess lemma names."},
                             {"inputSchema", {
                                 {"type", "object"},
                                 {"properties", {
@@ -125,6 +126,19 @@ int main() {
                                     {"timeout_ms", {{"type", "integer"}, {"description", "Timeout in milliseconds (0 = default, minimum 5000 when set). Response includes a \"summary\" field: \"N errors, N warnings[, N sorry]\"."}}}
                                 }},
                                 {"required", json::array({"source"})}
+                            }}
+                        },
+                        {
+                            {"name", "loogle_search"},
+                            {"description", "Search Mathlib4 for real lemma and theorem names via Loogle (https://loogle.lean-lang.org). Call this before writing any Mathlib lemma name in lean_exec to avoid unknown identifier errors. Supports name fragments, type signature patterns, and #find-style queries."},
+                            {"inputSchema", {
+                                {"type", "object"},
+                                {"properties", {
+                                    {"query", {{"type", "string"}, {"description", "Loogle search string — e.g. a lemma name fragment, a type signature like \"_ * _ ≤ _ * _\", or a #find pattern"}}},
+                                    {"max_results", {{"type", "integer"}, {"description", "Maximum number of hits to return (1-20, default 5)"}}},
+                                    {"timeout_ms", {{"type", "integer"}, {"description", "HTTP timeout in milliseconds (0 = default 10000, minimum 5000)"}}}
+                                }},
+                                {"required", json::array({"query"})}
                             }}
                         }
                     })}
@@ -157,6 +171,12 @@ int main() {
                     int timeout_ms = tool_args.value("timeout_ms", 0);
                     backend_res = call_python_run_lean(source, mode, timeout_ms);
                     handled = true;
+                } else if (tool_name == "loogle_search") {
+                    std::string query = tool_args.value("query", "");
+                    int max_results = tool_args.value("max_results", 5);
+                    int timeout_ms = tool_args.value("timeout_ms", 0);
+                    backend_res = call_python_loogle_search(query, max_results, timeout_ms);
+                    handled = true;
                 } else {
                     resp["error"] = { {"code", -32601}, {"message", "Unknown tool: " + tool_name} };
                 }
@@ -184,6 +204,13 @@ int main() {
                 std::string mode = params.value("mode", "check");
                 int timeout_ms = params.value("timeout_ms", 0);
                 backend_res = call_python_run_lean(source, mode, timeout_ms);
+                handled = true;
+            } else if (method == "loogle_search") {
+                auto params = req.value("params", json::object());
+                std::string query = params.value("query", "");
+                int max_results = params.value("max_results", 5);
+                int timeout_ms = params.value("timeout_ms", 0);
+                backend_res = call_python_loogle_search(query, max_results, timeout_ms);
                 handled = true;
             } else if (method == "mcp.cancel" || method == "$/cancelRequest") {
                 resp["error"] = { {"code", -32002}, {"message", "Cancelled (no-op)"} };

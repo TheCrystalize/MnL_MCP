@@ -13,9 +13,10 @@ from setuptools import setup, Extension
 from Cython.Build import cythonize
 
 extensions = [
-    Extension("mcp_z3",    ["mcp_z3.pyx"]),
-    Extension("mcp_sympy", ["mcp_sympy.pyx"]),
-    Extension("mcp_lean",  ["mcp_lean.pyx"]),
+    Extension("mcp_z3",     ["mcp_z3.pyx"]),
+    Extension("mcp_sympy",  ["mcp_sympy.pyx"]),
+    Extension("mcp_lean",   ["mcp_lean.pyx"]),
+    Extension("mcp_loogle", ["mcp_loogle.pyx"]),
 ]
 
 setup(
