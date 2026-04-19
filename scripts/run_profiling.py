@@ -75,7 +75,7 @@ def profile_sympy(iterations: int, outdir: pathlib.Path):
     except Exception:
         print("sympy not installed; skipping sympy profiling")
         return
-    mod = _load_module_with_fallback("mcp_sympy", "cython/mcp_sympy.pyx")
+    mod = _load_module_with_fallback("mcp_sympy", "cython/mcp_sympy.py")
     if mod is None:
         return
     expr = _poly_expr(40)
@@ -96,7 +96,7 @@ def profile_z3(iterations: int, outdir: pathlib.Path):
     except Exception:
         print("z3 not installed; skipping z3 profiling")
         return
-    mod = _load_module_with_fallback("mcp_z3", "cython/mcp_z3.pyx")
+    mod = _load_module_with_fallback("mcp_z3", "cython/mcp_z3.py")
     if mod is None:
         return
     smt = _make_smt(20)

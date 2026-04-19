@@ -9,17 +9,35 @@ void init_python() {
     if (!Py_IsInitialized()) {
         Py_Initialize();
         PyEval_InitThreads();
+        
+        // Add current working directory and build output directory to Python path
+        PyRun_SimpleString(
+            "import sys\n"
+            "import os\n"
+            "try:\n"
+            "    import win32api\n"
+            "    exe_path = win32api.GetModuleFileName(None)\n"
+            "except ImportError:\n"
+            "    exe_path = sys.executable\n"
+            "exe_dir = os.path.dirname(os.path.abspath(exe_path))\n"
+            "root_dir = os.path.abspath(os.path.join(exe_dir, '..', '..', '..'))\n"
+            "sys.path.insert(0, root_dir)\n"
+            "sys.path.insert(0, exe_dir)\n"
+            "sys.path.insert(0, os.path.join(root_dir, 'cython'))\n"
+            "sys.stdout = sys.stderr\n"
+        );
+        
+        // Release GIL after initialization
         PyThreadState* ts = PyEval_SaveThread();
         (void)ts;
     }
 }
 
 void finalize_python() {
-    if (Py_IsInitialized()) {
-        PyGILState_STATE gstate = PyGILState_Ensure();
-        Py_FinalizeEx();
-        (void)gstate;
-    }
+    // Skip explicit Py_Finalize on process exit: with a long-lived embedded
+    // interpreter and pybind11 modules holding Python objects, finalization
+    // can segfault as destructors run against a torn-down interpreter. The OS
+    // reclaims everything on exit anyway.
 }
 
 static json pyobj_to_json(PyObject* obj);
@@ -81,7 +99,7 @@ json call_python_explore(const std::string& expr, const std::vector<std::string>
         PyObject* s = PyUnicode_FromString(goals[(size_t)i].c_str());
         PyList_SET_ITEM(pyGoals, i, s); // steals reference
     }
-    PyObject* args = Py_BuildValue("(Oi)", expr.c_str(), timeout_ms);
+    
     // We need to call with (expr, goals, timeout_ms)
     PyObject* args2 = PyTuple_Pack(3, PyUnicode_FromString(expr.c_str()), pyGoals, PyLong_FromLong(timeout_ms));
     PyObject* pyres = PyObject_CallObject(func, args2);

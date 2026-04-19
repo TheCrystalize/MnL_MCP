@@ -10,7 +10,7 @@ try:
 except Exception as e:
     print("failed import sympy_bindings:", repr(e))
 
-# load mcp_sympy (fallback to executing cython/mcp_sympy.pyx)
+# load mcp_sympy from cython/ (pure-Python module)
 sys.path.insert(0, str(repo_root / "cython"))
 import mcp_sympy  # type: ignore[import-not-found]
 print("mcp_sympy module:", mcp_sympy)

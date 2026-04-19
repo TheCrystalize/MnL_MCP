@@ -98,6 +98,10 @@ namespace Launcher
             buttonsPanel.Controls.Add(btnStop);
             buttonsPanel.Controls.Add(btnOpenFolder);
 
+            Button btnOpenConsole = new Button { Text = "Open Console", AutoSize = true };
+            btnOpenConsole.Click += BtnOpenConsole_Click;
+            buttonsPanel.Controls.Add(btnOpenConsole);
+
             lblStatus = new Label { Text = "Stopped", Anchor = AnchorStyles.Left, AutoSize = true, Padding = new Padding(10, 6, 0, 0) };
 
             topPanel.Controls.Add(buttonsPanel, 0, 2);
@@ -143,6 +147,30 @@ namespace Launcher
             }
         }
 
+        private void BtnOpenConsole_Click(object? sender, EventArgs e)
+        {
+            try
+            {
+                var exe = txtServerPath.Text;
+                var folder = Path.GetDirectoryName(exe) ?? appDir;
+                // Launch cmd.exe with correct environment and path to server
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/k \"echo MnL MCP Server Console && echo. && PATH={folder};%PATH% && PYTHONPATH={folder} && echo Ready. Run '{Path.GetFileName(exe)}' to start server. && echo.\"",
+                    WorkingDirectory = folder,
+                    UseShellExecute = true,
+                    CreateNoWindow = false
+                };
+                Process.Start(startInfo);
+                AppendLog("Opened command console for server");
+            }
+            catch (Exception ex)
+            {
+                AppendLog($"Error opening console: {ex.Message}");
+            }
+        }
+
         private Task StartServerAsync()
         {
             return Task.Run(() =>
@@ -180,7 +208,16 @@ namespace Launcher
 
                     serverProcess = new Process { StartInfo = psi, EnableRaisingEvents = true };
                     serverProcess.OutputDataReceived += (s, e) => { if (e.Data != null) AppendLog(e.Data); };
-                    serverProcess.ErrorDataReceived += (s, e) => { if (e.Data != null) AppendLog("[ERR] " + e.Data); };
+                    serverProcess.ErrorDataReceived += (s, e) => {
+                        // Do not prefix stderr lines that are part of the welcome banner (they use box drawing characters)
+                        if (e.Data != null) {
+                            if (e.Data.StartsWith("╔") || e.Data.StartsWith("║") || e.Data.StartsWith("╠") || e.Data.StartsWith("╚") || string.IsNullOrWhiteSpace(e.Data)) {
+                                AppendLog(e.Data);
+                            } else {
+                                AppendLog("[ERR] " + e.Data);
+                            }
+                        }
+                    };
                     serverProcess.Exited += (s, e) => { AppendLog($"Server exited with code {serverProcess.ExitCode}"); UpdateStatus(false); };
 
                     serverProcess.Start();
@@ -188,6 +225,19 @@ namespace Launcher
                     serverProcess.BeginErrorReadLine();
                     AppendLog($"Started server: {exe} (PID {serverProcess.Id})");
                     UpdateStatus(true);
+
+                    // Auto-open console window when server starts
+                    try
+                    {
+                        // Allocate console window for this process if not already attached
+                        if (!ConsoleAllocator.IsConsoleAllocated())
+                        {
+                            ConsoleAllocator.AllocConsole();
+                            Console.Title = "MnL MCP Server Log";
+                            AppendLog("Opened console log window");
+                        }
+                    }
+                    catch { /* ignore - console allocation is optional */ }
                 }
                 catch (Exception ex)
                 {
@@ -274,6 +324,20 @@ namespace Launcher
                     e.Cancel = true;
                 }
             }
+        }
+    }
+
+    internal static class ConsoleAllocator
+    {
+        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        internal static extern bool AllocConsole();
+        
+        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        internal static extern IntPtr GetConsoleWindow();
+
+        internal static bool IsConsoleAllocated()
+        {
+            return GetConsoleWindow() != IntPtr.Zero;
         }
     }
 }

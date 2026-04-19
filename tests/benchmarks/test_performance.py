@@ -42,7 +42,7 @@ def _poly_expr(n: int) -> str:
 
 def test_sympy_simplify(benchmark):
     pytest.importorskip("sympy")
-    mod = _load_module_with_fallback("mcp_sympy", "cython/mcp_sympy.pyx")
+    mod = _load_module_with_fallback("mcp_sympy", "cython/mcp_sympy.py")
     expr = _poly_expr(40)
 
     def fn():
@@ -53,7 +53,7 @@ def test_sympy_simplify(benchmark):
 
 def test_sympy_factor(benchmark):
     pytest.importorskip("sympy")
-    mod = _load_module_with_fallback("mcp_sympy", "cython/mcp_sympy.pyx")
+    mod = _load_module_with_fallback("mcp_sympy", "cython/mcp_sympy.py")
     factors = " * ".join(f"(x - {i})" for i in range(1, 10))
     expr = f"{factors}"
 
@@ -65,7 +65,7 @@ def test_sympy_factor(benchmark):
 
 def test_sympy_solve(benchmark):
     pytest.importorskip("sympy")
-    mod = _load_module_with_fallback("mcp_sympy", "cython/mcp_sympy.pyx")
+    mod = _load_module_with_fallback("mcp_sympy", "cython/mcp_sympy.py")
     expr = "x**3 - 6*x**2 + 11*x - 6"
 
     def fn():
@@ -76,7 +76,7 @@ def test_sympy_solve(benchmark):
 
 def test_z3_solve_scaling(benchmark):
     pytest.importorskip("z3")
-    mod = _load_module_with_fallback("mcp_z3", "cython/mcp_z3.pyx")
+    mod = _load_module_with_fallback("mcp_z3", "cython/mcp_z3.py")
 
     def make_smt(n: int) -> str:
         parts = []

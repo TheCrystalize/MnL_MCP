@@ -3,7 +3,6 @@ project(mcp_stdio_src LANGUAGES CXX)
 
 add_executable(mcp_stdio_server
   mcp_stdio_server.cpp
-  lean_runner.cpp
   pyembed.cpp
 )
 
@@ -16,15 +15,15 @@ pybind11_add_module(lean_bindings MODULE lean_persistent.cpp)
 target_link_libraries(lean_bindings PRIVATE nlohmann_json::nlohmann_json)
 target_include_directories(lean_bindings PRIVATE ${Python_INCLUDE_DIRS})
 
-# Pybind11 module for Z3 model serialization helper
-pybind11_add_module(z3_bindings MODULE z3_bindings.cpp)
-target_link_libraries(z3_bindings PRIVATE nlohmann_json::nlohmann_json)
-target_include_directories(z3_bindings PRIVATE ${Python_INCLUDE_DIRS})
+# Pybind11 module for Z3 model serialization helper (disabled until Z3 is installed)
+# pybind11_add_module(z3_bindings MODULE z3_bindings.cpp)
+# target_link_libraries(z3_bindings PRIVATE nlohmann_json::nlohmann_json z3)
+# target_include_directories(z3_bindings PRIVATE ${Python_INCLUDE_DIRS})
 
-# Pybind11 module for Z3 C API wrapper (if available)
-pybind11_add_module(z3_capi MODULE z3_capi.cpp)
-target_link_libraries(z3_capi PRIVATE nlohmann_json::nlohmann_json)
-target_include_directories(z3_capi PRIVATE ${Python_INCLUDE_DIRS})
+# Pybind11 module for Z3 C API wrapper (disabled until Z3 is installed)
+# pybind11_add_module(z3_capi MODULE z3_capi.cpp)
+# target_link_libraries(z3_capi PRIVATE nlohmann_json::nlohmann_json z3)
+# target_include_directories(z3_capi PRIVATE ${Python_INCLUDE_DIRS})
 
 # Pybind11 module for SymPy hot-path helpers
 pybind11_add_module(sympy_bindings MODULE sympy_bindings.cpp)

@@ -1,5 +1,50 @@
-# Minimal Cython stub that uses SymPy.
-# Build with: python cython/setup.py build_ext --inplace
+# SymPy bindings with persistent REPL session.
+# Pure Python; the C++ server imports this module via PYTHONPATH.
+
+import sympy as sp
+
+# Persistent global SymPy session namespace - lives for entire server lifetime
+_sympy_namespace = {}
+_sympy_history = []
+
+def sympy_reset_session():
+    """Reset persistent SymPy REPL session to clean state"""
+    global _sympy_namespace, _sympy_history
+    _sympy_namespace.clear()
+    _sympy_history.clear()
+    # Prepopulate common sympy functions
+    exec("from sympy import *", _sympy_namespace)
+    return {"status": "ok", "session_reset": True}
+
+def sympy_session_status():
+    """Get current persistent session status"""
+    global _sympy_namespace, _sympy_history
+    if not _sympy_namespace:
+        sympy_reset_session()
+    return {
+        "status": "ok",
+        "defined_variables": len([k for k in _sympy_namespace.keys() if not k.startswith('_')]),
+        "history_length": len(_sympy_history),
+        "is_repl_active": True
+    }
+
+def sympy_exec(code: str, timeout_ms: int = 0):
+    """Execute arbitrary SymPy/Python code in persistent session namespace"""
+    try:
+        global _sympy_namespace, _sympy_history
+        if not _sympy_namespace:
+            sympy_reset_session()
+
+        result = eval(code, _sympy_namespace)
+        _sympy_history.append(code)
+
+        return {
+            "status": "ok",
+            "result": str(result),
+            "session_variables": len([k for k in _sympy_namespace.keys() if not k.startswith('_')])
+        }
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
 
 def explore(expr: str, goals, timeout_ms: int = 0):
     # Fast path: try C++ binding
@@ -19,8 +64,11 @@ def explore(expr: str, goals, timeout_ms: int = 0):
         pass
 
     try:
-        import sympy as sp
-        parsed = sp.sympify(expr)
+        global _sympy_namespace
+        if not _sympy_namespace:
+            sympy_reset_session()
+
+        parsed = sp.sympify(expr, locals=_sympy_namespace)
         results = {}
         for g in goals:
             if g == "simplify":

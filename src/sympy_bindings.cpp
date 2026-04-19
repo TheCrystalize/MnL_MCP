@@ -14,21 +14,24 @@
 
 namespace py = pybind11;
 
-static std::unordered_map<std::string, py::object> expr_cache_sympy;
-static std::deque<std::string> expr_order_sympy;
+// py::object caches are allocated on the heap and intentionally leaked.
+// Static-destruction order runs after the Python interpreter is torn down,
+// and destructing py::object then dereferences freed interpreter state.
+static auto& expr_cache_sympy = *new std::unordered_map<std::string, py::object>();
+static auto& expr_order_sympy = *new std::deque<std::string>();
 
-static std::unordered_map<std::string, py::object> expr_cache_symengine;
-static std::deque<std::string> expr_order_symengine;
+static auto& expr_cache_symengine = *new std::unordered_map<std::string, py::object>();
+static auto& expr_order_symengine = *new std::deque<std::string>();
 
-static std::unordered_map<std::string, py::object> result_cache;
-static std::deque<std::string> result_order;
+static auto& result_cache = *new std::unordered_map<std::string, py::object>();
+static auto& result_order = *new std::deque<std::string>();
 
 static std::mutex cache_mtx;
 static const size_t MAX_CACHE = 64;
 
 static bool symengine_tried = false;
 static bool symengine_ok = false;
-static py::object symengine_mod;
+static auto& symengine_mod = *new py::object();
 
 static std::string make_cache_key(const std::vector<std::string> &goals, const std::string &expr) {
     std::ostringstream oss;

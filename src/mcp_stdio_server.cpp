@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstdio>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -13,7 +14,6 @@ extern void finalize_python();
 extern json call_python_solve(const std::string& smt2, int timeout_ms);
 extern json call_python_explore(const std::string& expr, const std::vector<std::string>& goals, int timeout_ms);
 extern json call_python_run_lean(const std::string& source, const std::string& mode, int timeout_ms);
-extern json call_python_cvc5(const std::string& smt2, int timeout_ms);
 
 static std::string trim(const std::string& s) {
     size_t b = s.find_first_not_of(" \t\r\n");
@@ -26,31 +26,38 @@ int main() {
     std::ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
 
+    // Welcome banner - output to stderr so it doesn't interfere with stdio protocol.
+    // ASCII-only to avoid mojibake on Windows consoles using legacy code pages (CP437/CP1252).
+    fprintf(stderr, "\n");
+    fprintf(stderr, "+----------------------------------------------------------------+\n");
+    fprintf(stderr, "|                    MnL MCP Server                              |\n");
+    fprintf(stderr, "|         Math & Logic Model Context Protocol Server             |\n");
+    fprintf(stderr, "+----------------------------------------------------------------+\n");
+    fprintf(stderr, "|  [ok] Z3 Persistent Session  | [ok] SymPy Persistent Session  |\n");
+    fprintf(stderr, "|  [ok] Lean Persistent LSP    | Stateful REPL Enabled          |\n");
+    fprintf(stderr, "+----------------------------------------------------------------+\n");
+    fprintf(stderr, "|  Running in stdio mode. Ready for MCP client connections.     |\n");
+    fprintf(stderr, "|  Protocol: JSON-RPC 2.0 | NDJSON framing (one object per line)|\n");
+    fprintf(stderr, "|                                                                |\n");
+    fprintf(stderr, "|  MCP Server Running                                            |\n");
+    fprintf(stderr, "|  Local endpoint: stdio transport (no TCP/HTTP port)            |\n");
+    fprintf(stderr, "+----------------------------------------------------------------+\n");
+    fprintf(stderr, "\n");
+    fflush(stderr);
+
     init_python();
 
+    // MCP stdio transport uses newline-delimited JSON (NDJSON), one JSON object per line.
     while (true) {
-        std::string line;
-        int content_length = 0;
-
-        // Read headers (Content-Length)
-        while (std::getline(std::cin, line)) {
-            if (line.empty() || line == "\r") break;
-            const std::string prefix = "Content-Length:";
-            if (line.rfind(prefix, 0) == 0) {
-                std::string val = line.substr(prefix.size());
-                val = trim(val);
-                try { content_length = std::stoi(val); } catch (...) { content_length = 0; }
-            }
+        std::string body;
+        if (!std::getline(std::cin, body)) {
+            fprintf(stderr, "[MCP DEBUG] stdin closed. eof=%d fail=%d bad=%d\n", (int)std::cin.eof(), (int)std::cin.fail(), (int)std::cin.bad());
+            break;
         }
-
-        if (content_length <= 0) {
-            if (!std::cin || std::cin.eof()) break;
-            continue;
-        }
-
-        std::string body(content_length, '\0');
-        std::cin.read(&body[0], content_length);
-        if (!std::cin) break;
+        // Strip possible trailing \r from CRLF line endings
+        if (!body.empty() && body.back() == '\r') body.pop_back();
+        // Skip blank lines
+        if (body.empty()) continue;
 
         try {
             auto req = json::parse(body);
@@ -60,9 +67,96 @@ int main() {
 
             std::string method = req.value("method", "");
             bool handled = false;
+            bool is_tool_call = false;
             json backend_res;
 
-            if (method == "z3.solve") {
+            if (method == "initialize") {
+                resp["result"] = {
+                    {"protocolVersion", "2024-11-05"},
+                    {"capabilities", {
+                        {"tools", json::object()}
+                    }},
+                    {"serverInfo", {
+                        {"name", "mnl-math-logic-server"},
+                        {"version", "1.0.0"}
+                    }}
+                };
+            } else if (method == "notifications/initialized") {
+                // notification — no id, no response needed
+                continue;
+            } else if (method == "tools/list") {
+                resp["result"] = {
+                    {"tools", json::array({
+                        {
+                            {"name", "z3.solve"},
+                            {"description", "Solve SMT-LIB2 constraints using the Z3 solver"},
+                            {"inputSchema", {
+                                {"type", "object"},
+                                {"properties", {
+                                    {"smt2", {{"type", "string"}, {"description", "SMT-LIB2 input string"}}},
+                                    {"timeout_ms", {{"type", "integer"}, {"description", "Timeout in milliseconds (0 = default)"}}}
+                                }},
+                                {"required", json::array({"smt2"})}
+                            }}
+                        },
+                        {
+                            {"name", "sympy.explore"},
+                            {"description", "Explore a mathematical expression with SymPy"},
+                            {"inputSchema", {
+                                {"type", "object"},
+                                {"properties", {
+                                    {"expr", {{"type", "string"}, {"description", "Mathematical expression"}}},
+                                    {"goals", {{"type", "array"}, {"items", {{"type", "string"}}}, {"description", "Goals: simplify, factor, solve, expand, differentiate, integrate"}}},
+                                    {"timeout_ms", {{"type", "integer"}, {"description", "Timeout in milliseconds (0 = default)"}}}
+                                }},
+                                {"required", json::array({"expr"})}
+                            }}
+                        },
+                        {
+                            {"name", "lean.exec"},
+                            {"description", "Execute or check Lean 4 source code"},
+                            {"inputSchema", {
+                                {"type", "object"},
+                                {"properties", {
+                                    {"source", {{"type", "string"}, {"description", "Lean 4 source code"}}},
+                                    {"mode", {{"type", "string"}, {"description", "Mode: check or eval"}}},
+                                    {"timeout_ms", {{"type", "integer"}, {"description", "Timeout in milliseconds (0 = default)"}}}
+                                }},
+                                {"required", json::array({"source"})}
+                            }}
+                        }
+                    })}
+                };
+            } else if (method == "tools/call") {
+                auto params = req.value("params", json::object());
+                std::string tool_name = params.value("name", "");
+                auto tool_args = params.value("arguments", json::object());
+                is_tool_call = true;
+
+                if (tool_name == "z3.solve") {
+                    std::string smt2 = tool_args.value("smt2", "");
+                    int timeout_ms = tool_args.value("timeout_ms", 0);
+                    backend_res = call_python_solve(smt2, timeout_ms);
+                    handled = true;
+                } else if (tool_name == "sympy.explore") {
+                    std::string expr = tool_args.value("expr", "");
+                    std::vector<std::string> goals;
+                    if (tool_args.contains("goals") && tool_args["goals"].is_array()) {
+                        for (auto &g : tool_args["goals"]) goals.push_back(g.get<std::string>());
+                    }
+                    int timeout_ms = tool_args.value("timeout_ms", 0);
+                    backend_res = call_python_explore(expr, goals, timeout_ms);
+                    handled = true;
+                } else if (tool_name == "lean.exec") {
+                    std::string source = tool_args.value("source", "");
+                    std::string mode = tool_args.value("mode", "check");
+                    int timeout_ms = tool_args.value("timeout_ms", 0);
+                    backend_res = call_python_run_lean(source, mode, timeout_ms);
+                    handled = true;
+                } else {
+                    resp["error"] = { {"code", -32601}, {"message", "Unknown tool: " + tool_name} };
+                }
+            } else if (method == "z3.solve") {
                 auto params = req.value("params", json::object());
                 std::string smt2 = params.value("smt2", "");
                 int timeout_ms = params.value("timeout_ms", 0);
@@ -85,35 +179,66 @@ int main() {
                 int timeout_ms = params.value("timeout_ms", 0);
                 backend_res = call_python_run_lean(source, mode, timeout_ms);
                 handled = true;
-            } else if (method == "mcp.cancel") {
-                // cancellation: not implemented in this stub
+            } else if (method == "mcp.cancel" || method == "$/cancelRequest") {
                 resp["error"] = { {"code", -32002}, {"message", "Cancelled (no-op)"} };
             } else {
+                // Skip notifications (no id field) silently
+                if (!req.contains("id")) continue;
                 resp["error"] = { {"code", -32601}, {"message", "Method not found"} };
             }
 
             if (handled) {
-                // backend_res may include {"error": "..."} on failure
                 if (backend_res.is_object() && backend_res.contains("error")) {
-                    resp["error"] = { {"code", -32010}, {"message", backend_res["error"]} };
+                    if (is_tool_call) {
+                        // MCP tools/call errors are returned as isError:true in content
+                        resp["result"] = {
+                            {"content", json::array({{
+                                {"type", "text"},
+                                {"text", backend_res["error"].get<std::string>()}
+                            }})},
+                            {"isError", true}
+                        };
+                    } else {
+                        resp["error"] = { {"code", -32010}, {"message", backend_res["error"]} };
+                    }
+                } else if (is_tool_call) {
+                    // MCP tools/call success: wrap result in content array
+                    resp["result"] = {
+                        {"content", json::array({{
+                            {"type", "text"},
+                            {"text", backend_res.dump()}
+                        }})}
+                    };
                 } else {
                     resp["result"] = backend_res;
                 }
             }
 
+            // Per JSON-RPC 2.0: do not send a response to notifications (no id field).
+            if (!req.contains("id")) continue;
+
             auto resp_str = resp.dump();
-            std::cout << "Content-Length: " << resp_str.size() << "\r\n\r\n" << resp_str;
+            std::string id_str = resp["id"].dump();
+            fprintf(stderr, "[MCP DEBUG] Sending response (method='%s', id=%s) len=%lld\n", method.c_str(), id_str.c_str(), (long long)resp_str.size());
+            std::cout << resp_str << "\n";
             std::cout.flush();
         } catch (const std::exception& e) {
+            fprintf(stderr, "[MCP DEBUG] JSON parse error: %s\n", e.what());
+            fprintf(stderr, "[MCP DEBUG] Body (len=%lld):\n", (long long)body.size());
+            fwrite(body.data(), 1, std::min(body.size(), (size_t)1024), stderr);
+            fprintf(stderr, "\n");
             json err;
             err["jsonrpc"] = "2.0";
+            err["id"] = nullptr;
             err["error"] = { {"code", -32700}, {"message", "Parse error"}, {"data", e.what()} };
             std::string err_s = err.dump();
-            std::cout << "Content-Length: " << err_s.size() << "\r\n\r\n" << err_s;
+            std::cout << err_s << "\n";
             std::cout.flush();
         }
     }
-
+ 
+    fprintf(stderr, "[MCP DEBUG] Main loop exited; finalizing Python.\n");
+    fflush(stderr);
     finalize_python();
     return 0;
 }

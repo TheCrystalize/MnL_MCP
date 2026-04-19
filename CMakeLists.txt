@@ -27,8 +27,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pybind11)
 
-# Python (for embedding)
-find_package(Python COMPONENTS Interpreter Development REQUIRED)
+# Python (for embedding) - require exact Python 3.14 as documented
+find_package(Python 3.14 EXACT COMPONENTS Interpreter Development REQUIRED)
 
 # Subprojects
 add_subdirectory(src)
