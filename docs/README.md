@@ -14,6 +14,7 @@ What this docs/ folder contains (primary files)
 - TESTS.md, CI.md — test strategy and CI matrix.
 - EXAMPLES.md, SAMPLES/ — end-to-end examples and sample files.
 - API_SCHEMA/ — JSON Schema used to generate TypeScript types and clients.
+- CLAUDE_CODE.md — how to register the server with Claude Code (Anthropic's CLI / VS Code extension).
 - ROADMAP.md, CONTRIBUTING.md, TEMPLATES/, diagrams/
 
 Quickstart (Windows + *nix)
