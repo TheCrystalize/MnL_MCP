@@ -39,6 +39,11 @@ compile_commands.json
 *.obj
 *.pyd
 
+# Cython build artifacts (generated C and annotation HTML; keep .pyx sources)
+cython/*.c
+cython/*.html
+cython/build/
+
 # Python
 .venv/
 env/

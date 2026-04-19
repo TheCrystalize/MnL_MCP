@@ -42,7 +42,7 @@ void finalize_python() {
 
 static json pyobj_to_json(PyObject* obj);
 
-json call_python_solve(const std::string& smt2, int timeout_ms = 0) {
+json call_python_solve(const std::string& smt2, int timeout_ms = 0, const std::string& session_id = "") {
     json result;
     PyGILState_STATE gstate = PyGILState_Ensure();
     PyObject* module = PyImport_ImportModule("mcp_z3");
@@ -60,7 +60,11 @@ json call_python_solve(const std::string& smt2, int timeout_ms = 0) {
         PyGILState_Release(gstate);
         return result;
     }
-    PyObject* args = Py_BuildValue("(si)", smt2.c_str(), timeout_ms);
+    // Call with (smt2, timeout_ms, session_id)
+    PyObject* args = PyTuple_Pack(3,
+        PyUnicode_FromString(smt2.c_str()),
+        PyLong_FromLong(timeout_ms),
+        PyUnicode_FromString(session_id.c_str()));
     PyObject* pyres = PyObject_CallObject(func, args);
     Py_XDECREF(args);
     if (!pyres) {
@@ -76,7 +80,7 @@ json call_python_solve(const std::string& smt2, int timeout_ms = 0) {
     return result;
 }
 
-json call_python_explore(const std::string& expr, const std::vector<std::string>& goals, int timeout_ms = 0) {
+json call_python_explore(const std::string& expr, const std::vector<std::string>& goals, int timeout_ms = 0, const std::string& output_syntax = "python") {
     json result;
     PyGILState_STATE gstate = PyGILState_Ensure();
     PyObject* module = PyImport_ImportModule("mcp_sympy");
@@ -99,9 +103,12 @@ json call_python_explore(const std::string& expr, const std::vector<std::string>
         PyObject* s = PyUnicode_FromString(goals[(size_t)i].c_str());
         PyList_SET_ITEM(pyGoals, i, s); // steals reference
     }
-    
-    // We need to call with (expr, goals, timeout_ms)
-    PyObject* args2 = PyTuple_Pack(3, PyUnicode_FromString(expr.c_str()), pyGoals, PyLong_FromLong(timeout_ms));
+    // Call with (expr, goals, timeout_ms, output_syntax)
+    PyObject* args2 = PyTuple_Pack(4,
+        PyUnicode_FromString(expr.c_str()),
+        pyGoals,
+        PyLong_FromLong(timeout_ms),
+        PyUnicode_FromString(output_syntax.c_str()));
     PyObject* pyres = PyObject_CallObject(func, args2);
     Py_XDECREF(args2);
     Py_XDECREF(pyGoals);

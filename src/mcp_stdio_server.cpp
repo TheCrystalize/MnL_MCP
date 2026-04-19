@@ -11,8 +11,8 @@ using json = nlohmann::json;
 // Forward declarations for Python-embedded helpers (implemented in pyembed.cpp)
 extern void init_python();
 extern void finalize_python();
-extern json call_python_solve(const std::string& smt2, int timeout_ms);
-extern json call_python_explore(const std::string& expr, const std::vector<std::string>& goals, int timeout_ms);
+extern json call_python_solve(const std::string& smt2, int timeout_ms, const std::string& session_id);
+extern json call_python_explore(const std::string& expr, const std::vector<std::string>& goals, int timeout_ms, const std::string& output_syntax);
 extern json call_python_run_lean(const std::string& source, const std::string& mode, int timeout_ms);
 
 static std::string trim(const std::string& s) {
@@ -94,7 +94,8 @@ int main() {
                                 {"type", "object"},
                                 {"properties", {
                                     {"smt2", {{"type", "string"}, {"description", "SMT-LIB2 input string"}}},
-                                    {"timeout_ms", {{"type", "integer"}, {"description", "Timeout in milliseconds (0 = default)"}}}
+                                    {"timeout_ms", {{"type", "integer"}, {"description", "Timeout in milliseconds (0 = default, minimum 5000 when set)"}}},
+                                    {"session_id", {{"type", "string"}, {"description", "Session name to persist assertions across calls. Empty (default) = fresh isolated solver per call. Use \"persistent\" for the legacy accumulating REPL, or any custom name for a named session."}}}
                                 }},
                                 {"required", json::array({"smt2"})}
                             }}
@@ -107,7 +108,8 @@ int main() {
                                 {"properties", {
                                     {"expr", {{"type", "string"}, {"description", "Mathematical expression"}}},
                                     {"goals", {{"type", "array"}, {"items", {{"type", "string"}}}, {"description", "Goals: simplify, factor, solve, expand, differentiate, integrate"}}},
-                                    {"timeout_ms", {{"type", "integer"}, {"description", "Timeout in milliseconds (0 = default)"}}}
+                                    {"timeout_ms", {{"type", "integer"}, {"description", "Timeout in milliseconds (0 = default, minimum 5000 when set)"}}},
+                                    {"output_syntax", {{"type", "string"}, {"description", "Output syntax for results: \"python\" (default), \"lean\" (Lean 4), or \"smtlib\" (SMT-LIB2)"}}}
                                 }},
                                 {"required", json::array({"expr"})}
                             }}
@@ -120,7 +122,7 @@ int main() {
                                 {"properties", {
                                     {"source", {{"type", "string"}, {"description", "Lean 4 source code"}}},
                                     {"mode", {{"type", "string"}, {"description", "Mode: check or eval"}}},
-                                    {"timeout_ms", {{"type", "integer"}, {"description", "Timeout in milliseconds (0 = default)"}}}
+                                    {"timeout_ms", {{"type", "integer"}, {"description", "Timeout in milliseconds (0 = default, minimum 5000 when set). Response includes a \"summary\" field: \"N errors, N warnings[, N sorry]\"."}}}
                                 }},
                                 {"required", json::array({"source"})}
                             }}
@@ -136,7 +138,8 @@ int main() {
                 if (tool_name == "z3.solve") {
                     std::string smt2 = tool_args.value("smt2", "");
                     int timeout_ms = tool_args.value("timeout_ms", 0);
-                    backend_res = call_python_solve(smt2, timeout_ms);
+                    std::string session_id = tool_args.value("session_id", "");
+                    backend_res = call_python_solve(smt2, timeout_ms, session_id);
                     handled = true;
                 } else if (tool_name == "sympy.explore") {
                     std::string expr = tool_args.value("expr", "");
@@ -145,7 +148,8 @@ int main() {
                         for (auto &g : tool_args["goals"]) goals.push_back(g.get<std::string>());
                     }
                     int timeout_ms = tool_args.value("timeout_ms", 0);
-                    backend_res = call_python_explore(expr, goals, timeout_ms);
+                    std::string output_syntax = tool_args.value("output_syntax", "python");
+                    backend_res = call_python_explore(expr, goals, timeout_ms, output_syntax);
                     handled = true;
                 } else if (tool_name == "lean.exec") {
                     std::string source = tool_args.value("source", "");
@@ -160,7 +164,8 @@ int main() {
                 auto params = req.value("params", json::object());
                 std::string smt2 = params.value("smt2", "");
                 int timeout_ms = params.value("timeout_ms", 0);
-                backend_res = call_python_solve(smt2, timeout_ms);
+                std::string session_id = params.value("session_id", "");
+                backend_res = call_python_solve(smt2, timeout_ms, session_id);
                 handled = true;
             } else if (method == "sympy.explore") {
                 auto params = req.value("params", json::object());
@@ -170,7 +175,8 @@ int main() {
                     for (auto &g : params["goals"]) goals.push_back(g.get<std::string>());
                 }
                 int timeout_ms = params.value("timeout_ms", 0);
-                backend_res = call_python_explore(expr, goals, timeout_ms);
+                std::string output_syntax = params.value("output_syntax", "python");
+                backend_res = call_python_explore(expr, goals, timeout_ms, output_syntax);
                 handled = true;
             } else if (method == "lean.exec") {
                 auto params = req.value("params", json::object());
