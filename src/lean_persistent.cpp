@@ -313,7 +313,8 @@ public:
         } else if (!running) {
             res["status"] = "error";
             res["error"] = "lean server not running";
-            res["exit_code"] = -1;
+            res["exit_code"] = (last_exit_code != STILL_ACTIVE)
+                               ? (int)last_exit_code : -1;
         } else {
             json diag = diagnostics[current_uri];
             bool has_error = false;
@@ -359,6 +360,7 @@ private:
     std::map<std::string, json> diagnostics;
     int next_id = 1;
     bool running = false;
+    DWORD last_exit_code = STILL_ACTIVE;
     int file_counter = 0;
 
     // persistent document state
@@ -381,7 +383,10 @@ private:
         while (true) {
             BOOL ok = ReadFile(hChildStd_OUT_Rd, readbuf.data(), bufsize, &nRead, NULL);
             if (!ok || nRead == 0) {
+                DWORD exitCode = 0;
+                GetExitCodeProcess(procInfo.hProcess, &exitCode);
                 std::lock_guard<std::mutex> lk(mtx);
+                last_exit_code = exitCode;
                 running = false;
                 cv.notify_all();
                 break;
@@ -393,6 +398,7 @@ private:
             DWORD exitCode = 0;
             if (GetExitCodeProcess(procInfo.hProcess, &exitCode) && exitCode != STILL_ACTIVE) {
                 std::lock_guard<std::mutex> lk(mtx);
+                last_exit_code = exitCode;
                 running = false;
                 cv.notify_all();
                 break;

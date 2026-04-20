@@ -8,37 +8,33 @@ import shutil
 import os
 import re
 import threading
-from typing import Dict
 
 _MIN_TIMEOUT_MS: int = 5000
 
 # ── Persistent Lean server lifecycle ─────────────────────────────────────────
-# start_lean_server / check_lean_server / stop_lean_server allow the caller to
-# manage a long-lived `lake serve` or `lean --server` process and retrieve its
-# accumulated stderr for diagnostics.
 
-_server_proc = None          # subprocess.Popen or None
-_server_stderr_lines = []    # accumulated stderr from the server process
+_server_proc = None
+_server_stderr_lines = []
+_server_exit_code = None
 _server_lock = threading.Lock()
 
 
 def start_lean_server(str project_dir="", int timeout_ms=0):
     """
-    Start a persistent Lean server process (lake serve).
+    Start a persistent Lean server (lake serve).
 
-    project_dir: path to the Lean project root (cwd for the server).
-                 Defaults to CWD when empty.
-    timeout_ms:  not used for startup; reserved for future handshake wait.
+    project_dir: cwd for the server process; defaults to CWD when empty.
 
-    Returns {"status": "started"|"already_running"|"error", "pid": <int>}.
+    Returns {"status": "started"|"already_running"|"error", "pid": int}.
     """
-    global _server_proc, _server_stderr_lines
+    global _server_proc, _server_stderr_lines, _server_exit_code
     with _server_lock:
         if _server_proc is not None and _server_proc.poll() is None:
             return {"status": "already_running", "pid": _server_proc.pid}
 
         cwd = project_dir if project_dir else None
         _server_stderr_lines = []
+        _server_exit_code = None
         try:
             proc = subprocess.Popen(
                 ["lake", "serve"],
@@ -50,14 +46,17 @@ def start_lean_server(str project_dir="", int timeout_ms=0):
             )
             _server_proc = proc
 
-            # Drain stderr in a background thread so it never blocks.
             def _drain():
                 for line in proc.stderr:
                     with _server_lock:
                         _server_stderr_lines.append(line.rstrip())
+                # Server exited — capture exit code
+                proc.wait()
+                with _server_lock:
+                    _server_exit_code = proc.returncode
+
             t = threading.Thread(target=_drain, daemon=True)
             t.start()
-
             return {"status": "started", "pid": proc.pid}
         except FileNotFoundError:
             return {"status": "error", "error": "lake binary not found on PATH"}
@@ -67,50 +66,53 @@ def start_lean_server(str project_dir="", int timeout_ms=0):
 
 def check_lean_server():
     """
-    Check whether the persistent Lean server is running.
+    Return persistent Lean server status.
 
-    Returns {
-      "status": "running"|"stopped"|"not_started",
-      "pid": <int> | None,
-      "exit_code": <int> | None,
-      "stderr_lines": ["..."],   ← recent server stderr for diagnostics
+    Response: {
+      "status":      "running" | "stopped" | "not_started",
+      "pid":         int | null,
+      "exit_code":   int | null,
+      "stderr_lines": ["..."]   ← last ≤50 lines of server stderr
     }
     """
-    global _server_proc, _server_stderr_lines
+    global _server_proc, _server_stderr_lines, _server_exit_code
     with _server_lock:
         if _server_proc is None:
-            return {"status": "not_started", "pid": None, "exit_code": None,
-                    "stderr_lines": []}
+            return {"status": "not_started", "pid": None,
+                    "exit_code": None, "stderr_lines": []}
         rc = _server_proc.poll()
-        lines = list(_server_stderr_lines)
+        lines = list(_server_stderr_lines[-50:])
         if rc is None:
             return {"status": "running", "pid": _server_proc.pid,
                     "exit_code": None, "stderr_lines": lines}
         return {"status": "stopped", "pid": _server_proc.pid,
-                "exit_code": rc, "stderr_lines": lines}
+                "exit_code": _server_exit_code, "stderr_lines": lines}
 
 
 def stop_lean_server():
     """
     Terminate the persistent Lean server.
 
-    Returns {"status": "stopped"|"not_running", "stderr_lines": [...]}.
+    Response: {"status": "stopped"|"not_running", "exit_code": int|null,
+               "stderr_lines": [...]}
     """
-    global _server_proc, _server_stderr_lines
+    global _server_proc, _server_stderr_lines, _server_exit_code
     with _server_lock:
         if _server_proc is None or _server_proc.poll() is not None:
             lines = list(_server_stderr_lines)
+            ec = _server_exit_code
             _server_proc = None
-            return {"status": "not_running", "stderr_lines": lines}
+            return {"status": "not_running", "exit_code": ec, "stderr_lines": lines}
         _server_proc.terminate()
         try:
             _server_proc.wait(timeout=5)
         except subprocess.TimeoutExpired:
             _server_proc.kill()
+            _server_proc.wait()
         lines = list(_server_stderr_lines)
-        rc = _server_proc.returncode
+        ec = _server_exit_code if _server_exit_code is not None else _server_proc.returncode
         _server_proc = None
-        return {"status": "stopped", "exit_code": rc, "stderr_lines": lines}
+        return {"status": "stopped", "exit_code": ec, "stderr_lines": lines}
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -122,11 +124,10 @@ cpdef int _effective_timeout(int timeout_ms):
 
 
 cpdef str _summarise_output(str stdout, str stderr):
-    """Return a one-line 'N errors, N warnings[, N sorry]' summary from Lean output."""
     cdef str combined = stdout + stderr
-    cdef Py_ssize_t errors = len(re.findall(r'\berror\b', combined, re.IGNORECASE))
+    cdef Py_ssize_t errors   = len(re.findall(r'\berror\b',   combined, re.IGNORECASE))
     cdef Py_ssize_t warnings = len(re.findall(r'\bwarning\b', combined, re.IGNORECASE))
-    cdef Py_ssize_t sorries = len(re.findall(r'\bsorry\b', combined))
+    cdef Py_ssize_t sorries  = len(re.findall(r'\bsorry\b',   combined))
     parts = [
         f"{errors} error{'s' if errors != 1 else ''}",
         f"{warnings} warning{'s' if warnings != 1 else ''}",
@@ -136,24 +137,33 @@ cpdef str _summarise_output(str stdout, str stderr):
     return ", ".join(parts)
 
 
+def _collect_server_stderr():
+    with _server_lock:
+        lines = _server_stderr_lines[-50:]
+    return "\n".join(lines) if lines else ""
+
+
 # ── Main exec entry point ─────────────────────────────────────────────────────
 
 def run_lean(str source, str mode="check", int timeout_ms=0):
     """
-    Run Lean 4 on the provided source.
+    Run Lean 4 on source.
 
-    mode: "check" (default) or "eval".
-    timeout_ms: 0 = no timeout; minimum enforced at 5 000 ms when set.
+    mode: "check" (default) | "eval".
+    timeout_ms: 0 = no timeout; minimum 5 000 ms when set.
 
-    On failure the response includes a "diagnostics" field with any server
-    stderr collected so far, useful for diagnosing missing Lake dependencies
-    or server crashes.
-
-    Response always includes a "summary" field: "N errors, N warnings[, N sorry]".
+    Canonical response fields:
+      status      "ok" | "error" | "timeout"
+      error       present only when status == "error"
+      stdout      compiler stdout
+      stderr      compiler stderr
+      exit_code   process exit code
+      summary     "N errors, N warnings[, N sorry]"
+      diagnostics recent server stderr (present on error/timeout)
     """
     cdef int eff_timeout = _effective_timeout(timeout_ms)
 
-    # Fast path: try pybind11 binding
+    # Fast path: pybind11 binding
     try:
         import importlib, sys, pathlib
         repo_root = pathlib.Path(__file__).resolve().parents[1]
@@ -162,19 +172,20 @@ def run_lean(str source, str mode="check", int timeout_ms=0):
             sys.path.insert(0, str(candidate))
         lean_binding = importlib.import_module("lean_bindings")
         res = lean_binding.run_lean_persistent(source, mode, eff_timeout)
-        if isinstance(res, dict):
+        if isinstance(res, dict) and res.get("status") in ("ok", "error", "timeout"):
             res.setdefault("summary", _summarise_output(
                 res.get("stdout", ""), res.get("stderr", "")))
-            if res.get("status") == "error":
+            if res.get("status") != "ok":
                 res.setdefault("diagnostics", _collect_server_stderr())
             return res
     except Exception:
         pass
 
     cdef str path, status
-    tmpdir = tempfile.mkdtemp(prefix="mcp_lean_")
-    path = os.path.join(tmpdir, "main.lean")
+    tmpdir = None
     try:
+        tmpdir = tempfile.mkdtemp(prefix="mcp_lean_")
+        path = os.path.join(tmpdir, "main.lean")
         with open(path, "w", encoding="utf-8") as f:
             f.write(source)
         cmd = ["lean", "--run", path] if mode == "eval" else ["lean", path]
@@ -183,48 +194,44 @@ def run_lean(str source, str mode="check", int timeout_ms=0):
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
             status = "ok" if proc.returncode == 0 else "error"
             result = {
-                "status":   status,
-                "stdout":   proc.stdout,
-                "stderr":   proc.stderr,
+                "status":    status,
+                "stdout":    proc.stdout,
+                "stderr":    proc.stderr,
                 "exit_code": proc.returncode,
-                "summary":  _summarise_output(proc.stdout, proc.stderr),
+                "summary":   _summarise_output(proc.stdout, proc.stderr),
             }
-            if status == "error":
+            if status != "ok":
                 result["diagnostics"] = _collect_server_stderr()
             return result
         except subprocess.TimeoutExpired as e:
             return {
-                "status":     "timeout",
-                "stdout":     getattr(e, "stdout", "") or "",
-                "stderr":     getattr(e, "stderr", "") or "",
-                "exit_code":  -1,
-                "timeout_ms": eff_timeout,
-                "summary":    "timed out",
+                "status":      "timeout",
+                "stdout":      getattr(e, "stdout", "") or "",
+                "stderr":      getattr(e, "stderr", "") or "",
+                "exit_code":   -1,
+                "timeout_ms":  eff_timeout,
+                "summary":     "timed out",
                 "diagnostics": _collect_server_stderr(),
             }
         except FileNotFoundError:
             return {
-                "status":    "error",
-                "error":     "lean binary not found on PATH",
-                "exit_code": -1,
+                "status":      "error",
+                "error":       "lean binary not found on PATH",
+                "exit_code":   -1,
+                "summary":     "0 errors, 0 warnings",
                 "diagnostics": _collect_server_stderr(),
             }
         except Exception as e:
             return {
-                "status":    "error",
-                "error":     str(e),
-                "exit_code": -1,
+                "status":      "error",
+                "error":       str(e),
+                "exit_code":   -1,
+                "summary":     "0 errors, 0 warnings",
                 "diagnostics": _collect_server_stderr(),
             }
     finally:
-        try:
-            shutil.rmtree(tmpdir)
-        except Exception:
-            pass
-
-
-def _collect_server_stderr():
-    """Return recent server stderr lines (last 50) as a single string."""
-    with _server_lock:
-        lines = _server_stderr_lines[-50:]
-    return "\n".join(lines) if lines else ""
+        if tmpdir is not None:
+            try:
+                shutil.rmtree(tmpdir, ignore_errors=True)
+            except Exception:
+                pass

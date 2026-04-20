@@ -2,12 +2,14 @@
 # cython: boundscheck=False
 # cython: wraparound=False
 
+import threading
 import z3
 
 # Persistent global Z3 session - lives for entire server lifetime
 _z3_solver_instance = None
 _z3_goal_stack = []
 _z3_named_sessions = {}
+_z3_lock = threading.Lock()
 
 _MIN_TIMEOUT_MS: int = 5000
 
@@ -20,73 +22,72 @@ cpdef int _effective_timeout(int timeout_ms):
 
 def z3_reset_session():
     global _z3_solver_instance, _z3_goal_stack
-    _z3_solver_instance = z3.Solver()
-    _z3_goal_stack = []
+    with _z3_lock:
+        _z3_solver_instance = z3.Solver()
+        _z3_goal_stack = []
     return {"status": "ok", "session_reset": True}
 
 
 def z3_session_status():
     global _z3_solver_instance
-    if _z3_solver_instance is None:
-        z3_reset_session()
+    with _z3_lock:
+        if _z3_solver_instance is None:
+            _z3_solver_instance = z3.Solver()
+            _z3_goal_stack = []
+        count = len(_z3_solver_instance.assertions())
+        depth = len(_z3_solver_instance)
     return {
         "status": "ok",
-        "assertions_count": len(_z3_solver_instance.assertions()),
-        "stack_depth": len(_z3_solver_instance),
+        "assertions_count": count,
+        "stack_depth": depth,
         "is_repl_active": True,
     }
 
 
 # ── Unsat-core / proof helpers ────────────────────────────────────────────────
 
-def _extract_unsat_core(object solver, str smt2):
+def _extract_unsat_core(str smt2):
     """
-    Re-run the solver with unsat-core tracking enabled and return the core as a
-    list of labelled assertion strings.
-
-    Z3's Python API requires assertions to be named (via :named attributes or
-    track_unsat_core=True) before check() to produce a core.  We re-parse the
-    SMT2 with (set-option :produce-unsat-cores true) prepended, then ask for
-    the core after an unsat result.
+    Re-run the constraints with :produce-unsat-cores true in a fresh context
+    and return the conflicting named assertion labels.
+    Assertions are auto-labelled a0, a1, … when unnamed.
     """
     core_smt2 = "(set-option :produce-unsat-cores true)\n" + smt2
     try:
         ctx = z3.Context()
         core_solver = z3.Solver(ctx=ctx)
         core_solver.set("produce-unsat-cores", True)
-        # parse_smt2_string can handle named assertions
         parsed = z3.parse_smt2_string(core_smt2, ctx=ctx)
         for i, a in enumerate(parsed):
             core_solver.assert_and_track(a, f"a{i}")
-        r = core_solver.check()
-        if r == z3.unsat:
-            core = core_solver.unsat_core()
-            return [str(c) for c in core]
+        if core_solver.check() == z3.unsat:
+            return [str(c) for c in core_solver.unsat_core()]
     except Exception:
         pass
     return []
 
 
 def _explain_unsat(object solver, str smt2):
-    """
-    Produce a human-readable explanation for why the constraints are
-    unsatisfiable by walking the unsat core and describing each labelled
-    assertion.  Falls back to the raw SMT2 assertions when no names are found.
-    """
-    core_labels = _extract_unsat_core(solver, smt2)
+    """Human-readable conflict summary from the unsat core."""
+    core_labels = _extract_unsat_core(smt2)
     if not core_labels:
-        # Fall back: list all assertions as the explanation
         try:
             asserts = [str(a) for a in solver.assertions()]
             return "All assertions jointly unsatisfiable:\n" + "\n".join(
                 f"  [{i}] {a}" for i, a in enumerate(asserts))
         except Exception:
             return "unsat (no further explanation available)"
-
     lines = ["Unsatisfiable core (minimal conflicting subset):"]
     for label in core_labels:
         lines.append(f"  {label}")
     return "\n".join(lines)
+
+
+# ── Canonical error helper ────────────────────────────────────────────────────
+
+cpdef dict _err(str message, str query=""):
+    cdef dict d = {"status": "error", "error": message}
+    return d
 
 
 # ── Main entry point ──────────────────────────────────────────────────────────
@@ -96,32 +97,25 @@ def solve_smt(str smt2, int timeout_ms=0, str session_id="",
     """
     Solve an SMT-LIB2 problem.
 
-    session_id: empty (default) = fresh isolated solver per call.
-                "persistent" = legacy accumulating REPL.
-                Any other non-empty string = named session shared across calls.
+    session_id: empty = fresh isolated solver; "persistent" = legacy REPL;
+                any other string = named persistent session.
+    produce_unsat_core: on unsat, return "unsat_core" field (list of labels).
+    explain_unsat: on unsat, return "explanation" field (human-readable).
+                   Implies produce_unsat_core.
 
-    produce_unsat_core: when True and result is unsat, include an
-                        "unsat_core" field listing the conflicting named
-                        assertions.  Assertions must carry :named attributes
-                        in the SMT2 input, or core labels are generated
-                        automatically (a0, a1, …).
-
-    explain_unsat: when True and result is unsat, include an "explanation"
-                   field with a human-readable description of the conflict,
-                   derived from the unsat core.  Implies produce_unsat_core.
-
-    Response fields:
+    Canonical response fields:
       status          "sat" | "unsat" | "unknown" | "error"
+      error           present only when status == "error"
       model           model string (sat only)
       unsat_core      list of core labels (unsat + produce_unsat_core)
-      explanation     human-readable conflict summary (unsat + explain_unsat)
-      session_*       session bookkeeping fields
+      explanation     conflict summary (unsat + explain_unsat)
+      session_*       bookkeeping
     """
     cdef int eff_timeout = _effective_timeout(timeout_ms)
     cdef bint use_persistent = len(session_id) > 0
     cdef bint want_core = produce_unsat_core or explain_unsat
 
-    # Fast path: stateless C++ paths (only when no session persistence or core needed)
+    # Fast path: stateless C++ paths (no session, no core)
     if not use_persistent and not want_core:
         try:
             import importlib, sys, pathlib
@@ -147,21 +141,23 @@ def solve_smt(str smt2, int timeout_ms=0, str session_id="",
         except Exception:
             pass
 
-    # Choose solver
-    cdef object solver
     global _z3_solver_instance, _z3_named_sessions
 
-    if use_persistent:
-        if session_id == "persistent":
-            if _z3_solver_instance is None:
-                z3_reset_session()
-            solver = _z3_solver_instance
+    # Choose / create solver under lock
+    cdef object solver
+    with _z3_lock:
+        if use_persistent:
+            if session_id == "persistent":
+                if _z3_solver_instance is None:
+                    _z3_solver_instance = z3.Solver()
+                    _z3_goal_stack = []
+                solver = _z3_solver_instance
+            else:
+                if session_id not in _z3_named_sessions:
+                    _z3_named_sessions[session_id] = z3.Solver()
+                solver = _z3_named_sessions[session_id]
         else:
-            if session_id not in _z3_named_sessions:
-                _z3_named_sessions[session_id] = z3.Solver()
-            solver = _z3_named_sessions[session_id]
-    else:
-        solver = z3.Solver()
+            solver = z3.Solver()
 
     cdef dict result
     try:
@@ -182,8 +178,7 @@ def solve_smt(str smt2, int timeout_ms=0, str session_id="",
         elif r == z3.unsat:
             result = {"status": "unsat", "model": None}
             if want_core:
-                core = _extract_unsat_core(solver, smt2)
-                result["unsat_core"] = core
+                result["unsat_core"] = _extract_unsat_core(smt2)
             if explain_unsat:
                 result["explanation"] = _explain_unsat(solver, smt2)
         else:
@@ -194,4 +189,5 @@ def solve_smt(str smt2, int timeout_ms=0, str session_id="",
         result["session_persisted"] = use_persistent
         return result
     except Exception as e:
-        return {"status": "error", "error": str(e)}
+        return {"status": "error", "error": str(e),
+                "session_id": session_id, "session_persisted": use_persistent}
