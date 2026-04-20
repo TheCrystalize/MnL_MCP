@@ -198,12 +198,21 @@ def explore(str expr, goals, int timeout_ms=0, str output_syntax="python",
                 results["factor"] = str(sp.factor(parsed))
             elif g == "solve":
                 domain = None
+                domain_complex = False
                 if assumptions:
                     al = [a.strip().lower() for a in assumptions]
                     if "real" in al and "complex" not in al:
                         domain = sp.Reals
+                    elif "complex" in al:
+                        domain_complex = True
                 if domain is not None:
                     sols = sp.solveset(parsed, domain=domain)
+                    try:
+                        results["solve"] = [str(s) for s in sols]
+                    except Exception:
+                        results["solve"] = [str(sols)]
+                elif domain_complex:
+                    sols = sp.solveset(parsed, domain=sp.Complexes)
                     try:
                         results["solve"] = [str(s) for s in sols]
                     except Exception:

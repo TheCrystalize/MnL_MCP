@@ -83,6 +83,37 @@ def test_positive_assumption():
     assert res["status"] == "ok"
     assert "assumptions_applied" in res
 
+def test_complex_assumption_finds_imaginary_roots():
+    # x^2 + 1 = 0 has solutions ±i over ℂ
+    res = explore("x**2 + 1", goals=["solve"], assumptions=["complex"])
+    assert res["status"] == "ok"
+    sols = res["results"]["solve"]
+    assert isinstance(sols, list)
+    assert len(sols) == 2
+    joined = " ".join(sols)
+    assert "I" in joined or "i" in joined
+
+def test_complex_assumption_applied_field():
+    res = explore("x**2 + 1", goals=["solve"], assumptions=["complex"])
+    assert res["status"] == "ok"
+    assert "assumptions_applied" in res
+    assert "complex" in res["assumptions_applied"]
+
+def test_complex_real_give_different_results():
+    # Real: no solutions; Complex: two solutions
+    real_res = explore("x**2 + 1", goals=["solve"], assumptions=["real"])
+    cplx_res = explore("x**2 + 1", goals=["solve"], assumptions=["complex"])
+    assert real_res["results"]["solve"] == []
+    assert len(cplx_res["results"]["solve"]) == 2
+
+def test_complex_assumption_real_roots_still_found():
+    # x^2 - 1 = 0 has ±1 which are also in ℂ
+    res = explore("x**2 - 1", goals=["solve"], assumptions=["complex"])
+    assert res["status"] == "ok"
+    sols = res["results"]["solve"]
+    assert len(sols) == 2
+    assert all("I" not in s for s in sols)
+
 
 # ── Output syntax ─────────────────────────────────────────────────────────────
 
